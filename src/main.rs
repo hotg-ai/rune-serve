@@ -86,6 +86,13 @@ fn router() -> Router<Body, Infallible> {
         .unwrap()
 }
 
+async fn shutdown_signal() {
+    // Wait for the CTRL+C signal
+    tokio::signal::ctrl_c()
+        .await
+        .expect("failed to install CTRL+C signal handler");
+}
+
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
@@ -115,7 +122,7 @@ async fn main() {
     };
     let public_url  = public_url.unwrap();
     let url_to_open = public_url.as_str();
-    let public_url = format!("{}app.rune", public_url.as_str());
+    let public_url = format!("{}static.rune", public_url.as_str());
     
     
     let code = QrCode::new(public_url.clone()).unwrap();
@@ -124,9 +131,20 @@ async fn main() {
     image.save("static/qr_code.png").unwrap();
 
     log::info!("NGROK = {}", url_to_open);
-    open::that(url_to_open).unwrap();
+    
+    
+    match open::that(url_to_open) {
+        Ok(exit_status) => {
+            log::info!("Opened browser URL with status={}", exit_status)
+        },
+        Err(_) => {
+            log::info!("Couldn't open browser url")
+        }
+    }
+    let graceful = server.with_graceful_shutdown(shutdown_signal());
+
     // Run this server for... forever!
-    if let Err(e) = server.await {
+    if let Err(e) = graceful.await {
         eprintln!("server error: {}", e);
     }
 }
