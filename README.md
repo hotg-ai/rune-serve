@@ -3,7 +3,7 @@ Simple HTTP/Ngrok Serve to quick serve your Rune
 
 ## How to use
 
-``` mkdir static`
+``` mkdir static ```
 
 Write your Runefile in the static folder.
 
