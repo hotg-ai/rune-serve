@@ -41,6 +41,52 @@ async fn error_handler(
         .unwrap()
 }
 
+
+pub async fn default_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+    // Access the app state.
+    
+    return match Response::builder()
+        .status(StatusCode::from_u16(200).unwrap())
+        .header(header::CONTENT_TYPE, "text/html")
+        .body(Body::from(r#"<!DOCTYPE html>
+        <html>
+        
+        <head>
+        
+            <style>
+                body {
+                    background-color: #000
+                }
+        
+                .img-container {
+                    width: 60vw;
+                    min-width: 360px;
+                    text-align: center;
+                    margin: 5% auto;
+                    background-color: #fff;
+                }
+            </style>
+        </head>
+        
+        <body>
+            <div class="container">
+                <div class="img-container">
+                    <img 
+                        src="./qr_code.png"
+                        sizes="(max-width: 512px) 50vw, 60vw">
+                </div>
+            </div>
+        </body>
+        
+        </html>
+        "#))
+    {
+        Ok(r) => Ok(r),
+        _ => Ok(Response::new(Body::from(String::from("OK")))),
+    };
+
+}
+
 pub async fn home_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     // Access the app state.
     let default = String::from("index.html");
@@ -79,7 +125,7 @@ fn router() -> Router<Body, Infallible> {
 
     Router::builder()
         .middleware(Middleware::pre(logger))
-        .get("/", home_handler) // Show QR code for ngrok url + /app.rune 
+        .get("/", default_handler) // Show QR code for ngrok url + /app.rune 
         .get("/:filename", home_handler) 
         .err_handler_with_info(error_handler)
         .build()
