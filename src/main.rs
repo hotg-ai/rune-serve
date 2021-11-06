@@ -9,6 +9,8 @@ use qrcode::QrCode;
 use image::Luma;
 extern crate open;
 
+use std::env;
+
 
 
 use routerify::prelude::*;
@@ -42,7 +44,7 @@ async fn error_handler(
 }
 
 
-pub async fn default_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+pub async fn default_handler(_req: Request<Body>) -> Result<Response<Body>, Infallible> {
     // Access the app state.
     
     return match Response::builder()
@@ -91,7 +93,7 @@ pub async fn home_handler(req: Request<Body>) -> Result<Response<Body>, Infallib
     // Access the app state.
     let default = String::from("index.html");
     let filename = req.param("filename").unwrap_or(&default);
-
+    log::info!("Requesting file: {}", filename);
     let (content, mime) = match static_files::get_file_contents_with_mime(filename) {
         Ok(c) => c,
         Err(_e) => {
@@ -139,10 +141,23 @@ async fn shutdown_signal() {
         .expect("failed to install CTRL+C signal handler");
 }
 
+use std::path::Path;
+
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        log::error!("Usage: {} <runefile>", args[0]);
+        return;
+    } else {
+        if !Path::new(&args[1]).is_file() {
+            log::error!("File not found: {}", args[1]);
+            return;
+        }
+    }
 
     let router = router();
     let service = RouterService::new(router).unwrap();
@@ -168,13 +183,13 @@ async fn main() {
     };
     let public_url  = public_url.unwrap();
     let url_to_open = public_url.as_str();
-    let public_url = format!("{}static.rune", public_url.as_str());
+    let public_url = format!("{}{}", public_url.as_str(), args[1]);
     
     
     let code = QrCode::new(public_url.clone()).unwrap();
     let image = code.render::<Luma<u8>>().build();
 
-    image.save("static/qr_code.png").unwrap();
+    image.save("qr_code.png").unwrap();
 
     log::info!("NGROK = {}", url_to_open);
     

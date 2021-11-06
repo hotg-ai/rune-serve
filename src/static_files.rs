@@ -5,7 +5,7 @@ use std::path::Path;
 pub fn get_file_contents_with_mime(file: &String) -> Result<(Vec<u8>, MimeGuess), String> {
     let static_dir = match env::var("STATIC_DIR") {
         Ok(val) => val,
-        _ => String::from("static"),
+        _ => String::from(""),
     };
 
     let path = Path::new(&static_dir[..]).join(&file.clone().to_owned()[..]);
